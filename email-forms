@@ -1,0 +1,643 @@
+<?php
+//session_start();
+
+$errors = '';
+$name = '';
+$visitor_email = '';
+$phone = '';
+$subject1 = '';
+$user_message = '';
+
+
+if(isset($_POST['submit']))
+{
+	$name = ucwords($_POST['name']);
+	
+	
+		//send the email
+		$to = 'muhammad.irfan4327@gmail.com';
+		$from = 'abc@gmail.com';
+		$subject="Career Form Inquiry";
+		
+		$email = $to;
+	    $name = $_POST['name'];
+	   
+	   
+		    
+		$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+		
+	 	$body = "<h2>$name submitted an application form:</h2><br>";
+
+		unset($_POST['submit']);
+		foreach($_POST as $key=>$val){
+			ucwords($key) . ' : ' . $val;
+			if($key == 'school_name_1')
+				$body .= "<br><h5>School #1</h5><br>";
+			elseif ($key == 'school_name_2') 
+				$body .= "<br><h5>School #2</h5><br>";
+			elseif ($key == 'school_name_3') 
+				$body .= "<br><h5>School #3</h5><br>";
+			elseif ($key == 'employer_1') 
+				$body .= "<br><h5>Employer #1</h5><br>";
+			elseif ($key == 'employer_2') 
+				$body .= "<br><h5>Employer #2</h5><br>";
+			elseif ($key == 'employer_3') 
+				$body .= "<br><h5>Employer #3</h5><br>";
+			else if ($key == 'references_1')
+				$body .= "<br><h5>Employee  References</h5><br>";
+			else if ($key == 'stucco')
+				$body .= "<br><h5>Experience</h5><br>";	
+			
+			$key = str_replace('3',' ',str_replace('2',' ',str_replace('1','',str_replace('-',' ',str_replace('_',' ',ucwords($key))))));
+
+			if(is_array($val))
+				$body .= $key . ' : '.implode(' , ' , $val).'<br>';
+			else
+				$body .= $key . ' : '. $val . "<br>";
+	
+		}
+ 
+		
+	
+//}
+			$postData = $uploadedFile = $statusMsg = '';
+			$msgClass = 'errordiv';
+					//if(isset($_POST['submit'])){
+			$postData = $_POST;
+		    
+		    // Check whether submitted data is not empty
+		    if(!empty($email) && !empty($name) && !empty($subject)){
+		        
+		        // Validate email
+		        if(filter_var($email, FILTER_VALIDATE_EMAIL) === false){
+		            $statusMsg = 'Please enter your valid email.';
+		        }else{
+		            $uploadStatus = 1;
+		            
+		            // Upload attachment file
+		            if(!empty($_FILES["attachment"]["name"])){
+		                
+		                // File path config
+		                $targetDir = "uploads/";
+		                $fileName = basename($_FILES["attachment"]["name"]);
+		                $targetFilePath = $targetDir . $fileName;
+		                $fileType = pathinfo($targetFilePath,PATHINFO_EXTENSION);
+		                
+		                // Allow certain file formats
+		                $allowTypes = array('pdf', 'doc', 'docx', 'jpg', 'png', 'jpeg');
+		                if(in_array($fileType, $allowTypes)){
+		                    // Upload file to the server
+		                    if(move_uploaded_file($_FILES["attachment"]["tmp_name"], $targetFilePath)){
+		                        $uploadedFile = $targetFilePath;
+		                    }else{
+		                        $uploadStatus = 0;
+		                        $statusMsg = "Sorry, there was an error uploading your file.";
+		                    }
+		                }else{
+		                    $uploadStatus = 0;
+		                    $statusMsg = 'Sorry, only PDF, DOC, JPG, JPEG, & PNG files are allowed to upload.';
+		                }
+		            }
+		            
+		            if($uploadStatus == 1){
+		                
+		                // Recipient
+		                $toEmail = 'muhammad.irfan4327@gmail.com';
+
+		                // Sender
+		                $from = 'abc@gmail.com';
+		                $fromName = 'Mail Send Function';
+		                
+		                // Subject
+		                $emailSubject = 'Contact Request Submitted by '.$name;
+		                
+		                // Message 
+		                
+		                $htmlContent = $body;
+		                
+		                // Header for sender info
+		                $headers = "From: $fromName"." <".$from.">";
+
+		                if(!empty($uploadedFile) && file_exists($uploadedFile)){
+		                    
+		                    // Boundary 
+		                    $semi_rand = md5(time()); 
+		                    $mime_boundary = "==Multipart_Boundary_x{$semi_rand}x"; 
+		                    
+		                    // Headers for attachment 
+		                    $headers .= "\nMIME-Version: 1.0\n" . "Content-Type: multipart/mixed;\n" . " boundary=\"{$mime_boundary}\""; 
+		                    
+		                    // Multipart boundary 
+		                    $message = "--{$mime_boundary}\n" . "Content-Type: text/html; charset=\"UTF-8\"\n" .
+		                    "Content-Transfer-Encoding: 7bit\n\n" . $htmlContent . "\n\n"; 
+		                    
+		                    // Preparing attachment
+		                    if(is_file($uploadedFile)){
+		                        $message .= "--{$mime_boundary}\n";
+		                        $fp =    @fopen($uploadedFile,"rb");
+		                        $data =  @fread($fp,filesize($uploadedFile));
+		                        @fclose($fp);
+		                        $data = chunk_split(base64_encode($data));
+		                        $message .= "Content-Type: application/octet-stream; name=\"".basename($uploadedFile)."\"\n" . 
+		                        "Content-Description: ".basename($uploadedFile)."\n" .
+		                        "Content-Disposition: attachment;\n" . " filename=\"".basename($uploadedFile)."\"; size=".filesize($uploadedFile).";\n" . 
+		                        "Content-Transfer-Encoding: base64\n\n" . $data . "\n\n";
+		                    }
+		                    
+		                    $message .= "--{$mime_boundary}--";
+		                    $returnpath = "-f" . $email;
+		                    
+		                    // Send email
+		                    $mail = mail($toEmail, $emailSubject, $message, $headers, $returnpath);
+		                    
+		                    // Delete attachment file from the server
+		                    @unlink($uploadedFile);
+		                }else{
+		                     // Set content-type header for sending HTML email
+		                    $headers .= "\r\n". "MIME-Version: 1.0";
+		                    $headers .= "\r\n". "Content-type:text/html;charset=UTF-8";
+		                    
+		                    // Send email
+		                    if ($mail = mail($toEmail, $emailSubject, $htmlContent, $headers)) {
+		                    	echo "successfully";
+		                    } 
+		                }
+		                
+		                // If mail sent
+		                if($mail){
+		                    $statusMsg = 'Your contact request has been submitted successfully !';
+		                    $msgClass = 'succdiv';
+		                    echo "<script> window.location = 'thanku.php';</script>";
+		                    exit();
+		                   
+		                    
+		                    
+		                }else{
+		                    $statusMsg = 'Your contact request submission failed, please try again.';
+		                    echo $statusMsg ;
+		                }
+		            }
+		        }
+		    }else{
+		      echo  $statusMsg = 'Please fill all the fields.';
+		        
+		    }
+  
+	
+} 
+
+
+
+?>
+
+<style>
+label,a, body 
+{
+	font-family : Arial, Helvetica, sans-serif;
+	font-size : 12px; 
+}
+.err
+{
+	font-family : Verdana, Helvetica, sans-serif;
+	font-size : 12px;
+	color: red;
+}
+</style>	
+
+
+<!-- CSS
+	================================================== -->
+	
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<!--  styles-->
+	<link rel="stylesheet" href="css/style.css">
+	<!-- Responsive styles-->
+    
+	<link rel="stylesheet" href="css/responsive.css">
+     <link href="css/facebox.css" media="screen" rel="stylesheet" type="text/css" />
+	<!-- FontAwesome -->
+	<link rel="stylesheet" href="css/font-awesome.min.css">
+	<!-- Animation -->
+	<link rel="stylesheet" href="css/animate.css">
+	<!-- Prettyphoto -->
+	<link rel="stylesheet" href="css/prettyPhoto.css">
+	<!-- Owl Carousel -->
+	<link rel="stylesheet" href="css/owl.carousel.css">
+	<link rel="stylesheet" href="css/owl.theme.css">
+	<!-- Flexslider -->
+	<link rel="stylesheet" href="css/flexslider.css">
+	<!-- Flexslider -->
+	<link rel="stylesheet" href="css/cd-hero.css">
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+
+<script src='https://www.google.com/recaptcha/api.js'></script>
+
+	<div id="banner-area">
+		<img src="images/banner/banner2.jpg" alt ="" />
+		<div class="parallax-overlay"></div>
+			<!-- Subpage title start -->
+			<div class="banner-title-content">
+	        	<div class="text-center">
+		        	<h2>CAREERS</h2>
+		        	
+	          	</div>
+          	</div><!-- Subpage title end -->
+	</div><!-- Banner area end -->
+
+	<!-- Main container start -->
+
+	<section id="main-container">
+    
+
+    
+    
+		<div class="container">
+	
+
+					<form action="" name="contact_form" accept-charset="utf-8" enctype="multipart/form-data" method="post">
+					<div class="row">
+						<div class="form-group col-md-4">
+										<label>Full Name</label>
+									<input class="form-control" name="name" id="name" value="" placeholder="" type="text" required="">
+						</div>
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Email</label>
+									<input  class="form-control" type="text" class="form-control" name="email" value="" required>
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Street Address</label>
+									<input  class="form-control" type="text" class="form-control" name="street" value="">
+									</div>
+						</div>
+
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Suburb</label>
+									<input class="form-control" type="text" class="form-control" name="city" value="">
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Home Phone</label>
+									<input  class="form-control" type="text" class="form-control" name="phone_1" value="">
+									</div>
+						</div>
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Mobile</label>
+									<input class="form-control" type="text" class="form-control" name="phone_cell" value="">
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>	How did you hear about us?</label>
+									<select class="form-control"  name="refer">
+										<option value="None listed">Select </option>		
+										<option value="Walk-in">Job Seekers Website</option>		
+										<option value="Paint Store">Paint Store</option>		
+										<option value="Newspaper">Newspaper</option>
+										<option value="Friend">Friend</option>
+										<option value="Internet">Facebook Page</option>
+										<option value="Employee">Employee (list)</option>
+										<option value="Other">Other</option>
+									</select>
+									</div>
+						</div>
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>	Other:</label>
+										<input type="text" class="form-control" name="refer_extra" value="">
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Position(s) Applied for</label>
+										<input type="text" class="form-control" name="position" value="">
+									</div>
+						</div>
+					</div>
+					
+
+					<div class="col-md-12">
+						<div class="form-group">
+							<label class="fineprint" style="padding: 7px; background: #EEE;">The following questions are not designed to elicit information about an applicant's disability. Please do not provide information about the existence of a disability, particular accommodation, or whether accommodation is necessary. These issues may be addressed at a later stage to the extent permitted by law.</label>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Have you ever been convicted of a misdemeanor or felony? </label>
+										<select class="form-control" name="felony">
+											<option value=" ">Select</option>		
+											<option value="Yes">Yes</option>		
+											<option value="No">No</option>
+										</select>
+									</div>
+						</div>
+						<div class="col-md-8">
+									<div class="form-group">
+										<label>If yes, please provide date(s) and details:<br></label>
+										<input type="text" class="form-control" name="felony_why" value="">
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+									<div class="form-group">
+										<label>Have you entered into an agreement with any former employer or other party (such as a non-competition agreement) that might, in any way, restrict your ability to work for our company? </label>
+										<select class="form-control" name="former_employ">
+											<option value=" ">Select</option>		
+											<option value="Yes">Yes</option>		
+											<option value="No">No</option>
+										</select>
+									</div>
+						</div>
+						<div class="col-md-8">
+									<div class="form-group">
+										<label>If yes, please explain:</label>
+										<input type="text" class="form-control" name="former_employ_why" value="">
+									</div>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-md-12" style="padding: 7px;">
+							<div class="form-group">
+								<div class="bheader">Job History</div> 
+								<label class="subheader">Starting with your most recent employer, provide the following information</label>
+							</div>
+						</div>
+					</div>
+
+					<!--Employer 1 -->
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-group">
+								<label class="fineprint bfont">Employer</label>				
+							</div>
+						</div>
+
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Employer Name</label>
+										<input type="text" class="form-control" name="employer_1" value="">
+									</div>
+						</div>
+
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Address</label>
+										<input type="text" class="form-control" name="employer_address_1" value="">
+									</div>
+						</div>
+
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Telephone</label>
+										<input type="text" class="form-control" name="employer_telephone_1" value="">
+									</div>
+						</div>
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Job Title</label>
+										<input type="text" class="form-control" name="job_title_1" value="">
+									</div>
+						</div>
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Supervisor</label>
+										<input type="text" class="form-control" name="supervisor_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Job Duties</label>
+										<input type="text" class="form-control" name="job_duties_1" value="">
+									</div>
+						</div>		
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Start Date</label>
+										<input type="text" class="form-control" name="start_date_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>End Date</label>
+										<input type="text" class="form-control" name="end_date_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Starting Pay</label>
+										<input type="text" class="form-control" name="starting_pay_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Ending Pay</label>
+										<input type="text" class="form-control" name="ending_pay_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Why did you leave?</label>
+										<input type="text" class="form-control" name="why_leave_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>What did you like most about this position?</label>
+										<input type="text" class="form-control" name="position_liked_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>What did you like least about this position?</label>
+										<input type="text" class="form-control" name="position_disliked_1" value="">
+									</div>
+						</div>	
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>May we contact this employer for a reference?</label>
+										<input type="text" class="form-control" name="contact_employer_1" value="">
+									</div>
+						</div>								
+					</div>			
+							
+
+					
+					<div class="row">
+						<div class="col-md-12 " >
+							<div class="form-group">
+								<label class="fineprint" style="padding: 7px;">Explain any gaps in your employment: </label>
+								<input type="text" class="form-control" name="employmentgaps" value="">
+							</div>
+						</div>
+
+						<div class="col-md-6" >
+							<div class="form-group">
+								<label class="fineprint" >If not addressed on the previously, have you ever been fired or asked to resign from a job? </label>
+								<select name="fired" class="form-control">
+									<option value=" ">Select</option>		
+									<option value="Yes">Yes</option>		
+									<option value="No">No</option>
+								</select>							
+							</div>
+						</div>
+
+						<div class="col-md-6" >
+							<div class="form-group">
+								<label class="fineprint" >If yes, please explain:</label>
+								<input type="text" class="form-control" name="firedwhy" value="">						
+							</div>
+						</div>
+					
+
+
+					</div>
+
+					<!-- Educational Background -->
+						<div class="col-md-12">
+							<div class="form-group bheader">
+								Educational Background		
+							</div>
+						</div>
+
+						<!-- <div class="col-md-12">
+							<div class="form-group">
+								<label class="fineprint bfont">School #1	</label>
+							</div>
+						</div> -->
+					<div class="row">
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>School</label>
+										<input type="text" class="form-control" name="school_name_1" value="">
+									</div>
+						</div>
+						<div class="col-md-6">
+									<div class="form-group">
+										<label>Years Completed</label>
+										<input type="text" class="form-control" name="years_completed_1" value="">
+									</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-12">
+									<div class="form-group">
+										<label>Completed</label>
+										<div>
+											<div class="col-md-2">
+												<input type="radio" class="input" name="school_completed_1" value="Diploma"> Diploma
+											</div>
+											<div class="col-md-2">
+												<input type="radio" class="input" name="school_completed_1" value="GED"> TAFE
+											</div>
+											<div class="col-md-2">
+												<input type="radio" class="input" name="school_completed_1" value="Degree"> University 
+											</div>
+											<div class="col-md-3">
+												<input style="width: 50%;" type="text"  class="form-control" name="school_degree_list_1" placeholder="Degree" value="">
+											</div>
+											<div class="col-md-3">
+												<input type="text" class="form-control" name="school_other_1" value="Other">
+											</div>
+										</div>
+									</div>
+						</div>
+					</div>
+					
+					<!--References-->
+						<div class="col-md-12">
+							<div class="form-group">
+								<div class="bheader">References</div>		
+								<div class="dots-x"></div>
+								<p class="subheader">List name and telephone numbers of three business/work references who are <em>not</em> related to your and are not previous supervisors. If not applicable, list three school or personal references who are not related to you.</p>
+
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col-md-4">
+									<div class="form-group">
+										<label>Reference #1</label>
+										<input type="text" class="form-control" name="references_1" value="">
+									</div>
+							</div>
+
+							<div class="col-md-4">
+									<div class="form-group">
+										<label>Reference #2</label>
+										<input type="text" class="form-control" name="references_2" value="">
+									</div>
+							</div>
+
+							<div class="col-md-4">
+									<div class="form-group">
+										<label>Reference #3</label>
+										<input type="text" class="form-control" name="references_3" value="">
+									</div>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="col-md-4">
+								<label>Please upload a file</label>
+							</div>
+						</div>			 
+					 	<div class="row">
+							<div class="col-md-4">
+								<input type="file" name="attachment" class="form-control">
+							</div>
+						</div>
+					</div>
+						<tr><td colspan="2">
+					<br>
+					<p><input type="checkbox" class="input"  value="Agreement Signed" required> 
+					<strong>I have read and agree to the above statment.</strong></p>	
+					<br clear="all">
+
+					<p><strong>Thank you for your interest</strong></p>
+					</td></tr>
+
+					<tr><td colspan="2" align="center">
+					 <div class="dots-x"></div>							
+					<br> 
+						
+						<input type="submit" name="submit"  class="btn-sm btn-primary" value="Submit Application"> 
+
+						
+							</td></tr>
+					</tbody></table>	 
+					<br>
+					<br>
+					<br>
+					 
+
+					</div>
+					</fieldset><div class="prep parent-active" style="position: absolute !important; height: 0 !important;  overflow: hidden !important;"></div>
+				
+					</form>
+	    		</div>
+                
+ 
+
+                
+                
+	    	
